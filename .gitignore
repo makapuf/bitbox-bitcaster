@@ -1,0 +1,7 @@
+*.o
+*.bin
+*.elf
+*_emu
+
+build/
+
