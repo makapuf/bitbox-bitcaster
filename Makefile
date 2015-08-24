@@ -1,6 +1,6 @@
 NAME = bitcaster
 GAME_C_FILES = $(NAME).c
-GAME_C_OPTS = -DVGAMODE_320
+GAME_C_OPTS = -DVGAMODE_400
 
 include $(BITBOX)/lib/bitbox.mk
 

@@ -38,18 +38,19 @@ float planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
 
 // color and verical position from the top of each vertical line
-uint16_t raycast_color[VGA_H_PIXELS]; 
-uint8_t raycast_y[VGA_H_PIXELS]; // assumes vertical resolution not more than 512
+uint16_t raycast_color [VGA_H_PIXELS]; 
+uint8_t  raycast_y [VGA_H_PIXELS]; // assumes vertical resolution not more than 512
 
 #define CEILING_COLOR RGB(40,60,80)
 #define GROUND_COLOR RGB(40,40,40)
 
-void graph_line(void) 
+
+void _graph_line(void) 
 {
     // draws elements 
     if (vga_line<=VGA_V_PIXELS/2) {
         for (int x=0;x<VGA_H_PIXELS;x++) {
-            draw_buffer[x] = vga_line < raycast_y[x] ? CEILING_COLOR : raycast_color[x];
+                draw_buffer[x] = vga_line < raycast_y[x] ? CEILING_COLOR : raycast_color[x];
         }
     } else { // bottom
         for (int x=0;x<VGA_H_PIXELS;x++) {
@@ -59,10 +60,38 @@ void graph_line(void)
 }
 
 
-void graph_frame(void) 
+void graph_line(void) 
 {
+    uint32_t *y32 = (uint32_t *) raycast_y;
+    uint32_t *buf32 = (uint32_t *) draw_buffer;
+    uint32_t c32;
+    // draws elements 
+    if (vga_line<=VGA_V_PIXELS/2) { // top
+        for (int x=0;x<VGA_H_PIXELS/4;x++,y32++) {
+            c32  =  vga_line < (*y32     & 0xff) ? CEILING_COLOR : raycast_color[x*4];
+            c32 |= (vga_line < (*y32>> 8 & 0xff) ? CEILING_COLOR : raycast_color[x*4+1]) << 16;
+            *buf32++ = c32;
 
+            c32  =  vga_line < (*y32>>16 & 0xff) ? CEILING_COLOR : raycast_color[x*4+2];
+            c32 |= (vga_line < (*y32>>24 & 0xff) ? CEILING_COLOR : raycast_color[x*4+3]) << 16;
+            *buf32++ = c32;
+        }
+    } else { // bottom
+        int line = VGA_V_PIXELS - vga_line;
+        for (int x=0;x<VGA_H_PIXELS/4;x++,y32++) {
+            c32  =  line < (*y32    & 0xff) ? GROUND_COLOR : raycast_color[x*4];
+            c32 |= (line < (*y32>>8 & 0xff) ? GROUND_COLOR : raycast_color[x*4+1]) << 16;
+            *buf32++ = c32;
+
+            c32  =  line < (*y32>>16 & 0xff) ? GROUND_COLOR : raycast_color[x*4+2];
+            c32 |= (line < (*y32>>24 & 0xff) ? GROUND_COLOR : raycast_color[x*4+3])<<16;
+            *buf32++ = c32;
+        }
+    }
 }
+
+
+void graph_frame(void) {}
 
 void handle_userinput(void) {
     
@@ -70,23 +99,26 @@ void handle_userinput(void) {
 
     // speed modifiers
     // asserts framerate of 60 fps, constant.
-    float moveSpeed = 5.0 / 60.; //the constant value is in squares/second
-    float rotSpeed = 3.0 /60. ; //the constant value is in radians/second
+    float moveSpeed = 5.0f / 60.f; //the constant value is in squares/second
+    float rotSpeed = 3.0f /60.f ; //the constant value is in radians/second
 
-    //move forward if no wall in front of you
-    if (GAMEPAD_PRESSED(0,up))
-    {
-        if(worldMap[(int)(posX + dirX * moveSpeed)][(int)(posY)] == 0) posX += dirX * moveSpeed;
-        if(worldMap[(int)(posX)][(int)(posY + dirY * moveSpeed)] == 0) posY += dirY * moveSpeed;
-    }
-    //move backwards if no wall behind you
-    if (GAMEPAD_PRESSED(0,down))
-    {
-        if(worldMap[(int)(posX - dirX * moveSpeed)][(int)(posY)] == 0) posX -= dirX * moveSpeed;
-        if(worldMap[(int)(posX)][(int)(posY - dirY * moveSpeed)] == 0) posY -= dirY * moveSpeed;
+    // move forward if no wall in front of you
+    if (GAMEPAD_PRESSED(0,up)) {
+        if(worldMap[(int)(posX + dirX * moveSpeed)][(int)(posY)] == 0) 
+            posX += dirX * moveSpeed;
+        if(worldMap[(int)(posX)][(int)(posY + dirY * moveSpeed)] == 0) 
+            posY += dirY * moveSpeed;
     }
 
-    //rotate to the right
+    // move backwards if no wall behind you
+    if (GAMEPAD_PRESSED(0,down)) {
+        if(worldMap[(int)(posX - dirX * moveSpeed)][(int)(posY)] == 0) 
+            posX -= dirX * moveSpeed;
+        if(worldMap[(int)(posX)][(int)(posY - dirY * moveSpeed)] == 0) 
+            posY -= dirY * moveSpeed;
+    }
+
+    // rotate to the right
     if (GAMEPAD_PRESSED(0,right))
     {
         //both camera direction and camera plane must be rotated
@@ -97,7 +129,7 @@ void handle_userinput(void) {
         planeX = planeX * cosf(-rotSpeed) - planeY * sinf(-rotSpeed);
         planeY = oldPlaneX * sinf(-rotSpeed) + planeY * cosf(-rotSpeed);
     }
-    //rotate to the left
+    // rotate to the left
     if (GAMEPAD_PRESSED(0,left)) {
         //both camera direction and camera plane must be rotated
         float oldDirX = dirX;
@@ -107,6 +139,23 @@ void handle_userinput(void) {
         planeX = planeX * cosf(rotSpeed) - planeY * sinf(rotSpeed);
         planeY = oldPlaneX * sinf(rotSpeed) + planeY * cosf(rotSpeed);
     }
+
+    // strafe left
+    if (GAMEPAD_PRESSED(0,L)) {
+        if(worldMap[(int)(posX - dirY  * moveSpeed)][(int)(posY)] == 0) 
+            posX -= dirY * moveSpeed;
+        if(worldMap[(int)(posX)][(int)(posY + dirX * moveSpeed)] == 0) 
+            posY += dirX * moveSpeed;
+    }
+
+    // strafe right
+    if (GAMEPAD_PRESSED(0,R)) {
+        if(worldMap[(int)(posX + dirY * moveSpeed)][(int)(posY)] == 0) 
+            posX += dirY * moveSpeed;
+        if(worldMap[(int)(posX)][(int)(posY - dirX * moveSpeed)] == 0) 
+            posY -= dirX * moveSpeed;
+    }
+
 }
 
 
@@ -120,7 +169,7 @@ void game_frame()
     for(int x = 0; x < VGA_H_PIXELS; x++)
     {
         //calculate ray position and direction 
-        float cameraX = 2 * x / (float)(VGA_H_PIXELS) - 1; //x-coordinate in camera space
+        float cameraX = 2.f * x / (float)(VGA_H_PIXELS) - 1.f; //x-coordinate in camera space
         float rayPosX = posX;
         float rayPosY = posY;
         float rayDirX = dirX + planeX * cameraX;
@@ -143,7 +192,7 @@ void game_frame()
         int stepY;
 
         int hit = 0; //was there a wall hit?
-        int side; //was a NS or a EW wall hit?
+        int side =0; //was a NS or a EW wall hit?
         //calculate step and initial sideDist
         if (rayDirX < 0)
         {
@@ -151,7 +200,7 @@ void game_frame()
             sideDistX = (rayPosX - mapX) * deltaDistX;
         } else {
             stepX = 1;
-            sideDistX = (mapX + 1.0 - rayPosX) * deltaDistX;
+            sideDistX = (mapX + 1.0f - rayPosX) * deltaDistX;
         }
 
         if (rayDirY < 0) {
@@ -159,7 +208,7 @@ void game_frame()
             sideDistY = (rayPosY - mapY) * deltaDistY;
         } else {
             stepY = 1;
-            sideDistY = (mapY + 1.0 - rayPosY) * deltaDistY;
+            sideDistY = (mapY + 1.0f - rayPosY) * deltaDistY;
         }
 
         //perform DDA
@@ -185,9 +234,9 @@ void game_frame()
 
         //Calculate distance projected on camera direction (oblique distance will give fisheye effect!)
         if (side == 0)
-            perpWallDist = fabs((mapX - rayPosX + (1 - stepX) / 2) / rayDirX);
+            perpWallDist = fabsf((mapX - rayPosX + (1 - stepX) / 2) / rayDirX);
         else
-            perpWallDist = fabs((mapY - rayPosY + (1 - stepY) / 2) / rayDirY);
+            perpWallDist = fabsf((mapY - rayPosY + (1 - stepY) / 2) / rayDirY);
         
         //Calculate height of line to draw on screen
         int lineHeight = abs((int)(VGA_V_PIXELS / perpWallDist));
