@@ -8,6 +8,6 @@ Could use a bit of love / optimization :)
 
 use gamepad  / keyboard arrows to navigate. 
 
-see video : 
+![Screenshot](https://raw.githubusercontent.com/makapuf/bitbox-bitcaster/master/screenshot.png)
+[Video](https://raw.githubusercontent.com/makapuf/bitbox-bitcaster/master/video.mp4)
 
-<video src="video.mp4" width="320" height="200" controls preload></video>
