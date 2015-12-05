@@ -2,6 +2,7 @@
 *.bin
 *.elf
 *_emu
+*.map
 
 build/
 
