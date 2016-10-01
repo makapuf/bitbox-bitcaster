@@ -91,8 +91,6 @@ void graph_line(void)
 }
 
 
-void graph_frame(void) {}
-
 void handle_userinput(void) {
     
     kbd_emulate_gamepad();

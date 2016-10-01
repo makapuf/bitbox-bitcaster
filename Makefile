@@ -2,7 +2,7 @@ NAME = bitcaster
 GAME_C_FILES = $(NAME).c
 GAME_C_OPTS = -DVGAMODE_400
 
-include $(BITBOX)/lib/bitbox.mk
+include $(BITBOX)/kernel/bitbox.mk
 
 $(NAME).c: terrain.h
 
