@@ -1,6 +1,6 @@
 NAME = bitcaster
 GAME_C_FILES = $(NAME).c
-GAME_C_OPTS = -DVGAMODE_400
+DEFINES = VGA_MODE=400
 
 include $(BITBOX)/kernel/bitbox.mk
 

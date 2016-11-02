@@ -93,8 +93,6 @@ void graph_line(void)
 
 void handle_userinput(void) {
     
-    kbd_emulate_gamepad();
-
     // speed modifiers
     // asserts framerate of 60 fps, constant.
     float moveSpeed = 5.0f / 60.f; //the constant value is in squares/second
