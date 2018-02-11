@@ -65,9 +65,13 @@ void graph_line(void)
     uint32_t *y32 = (uint32_t *) raycast_y;
     uint32_t *buf32 = (uint32_t *) draw_buffer;
     uint32_t c32;
+
     // draws elements 
     if (vga_line<=VGA_V_PIXELS/2) { // top
         for (int x=0;x<VGA_H_PIXELS/4;x++,y32++) {
+            // test if all vga_line has same sign wrt to y32, y32>>8, y32>>16, y32>>24 (most often the case)
+            // using QSUB intrinsisc / std sub else.
+
             c32  =  vga_line < (*y32     & 0xff) ? CEILING_COLOR : raycast_color[x*4];
             c32 |= (vga_line < (*y32>> 8 & 0xff) ? CEILING_COLOR : raycast_color[x*4+1]) << 16;
             *buf32++ = c32;
